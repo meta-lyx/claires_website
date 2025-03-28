@@ -1,0 +1,119 @@
+:root {
+    /* Modern color palette */
+    --primary-color: #2563eb;
+    --text-dark: #1f2937;
+    --text-light: #6b7280;
+    --background: #ffffff;
+    --accent: #3b82f6;
+}
+
+/* Base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.6;
+    color: var(--text-dark);
+    background-color: var(--background);
+    padding: 2rem;
+}
+
+/* Typography */
+h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.025em;
+}
+
+p {
+    font-size: 1.125rem;
+    color: var(--text-light);
+    max-width: 65ch;
+    margin: 0 auto;
+    text-align: left;
+    margin-bottom: 1.5rem;
+}
+
+/* Media queries for responsive design */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2rem;
+    }
+    
+    p {
+        font-size: 1rem;
+        padding: 0 1rem;
+    }
+}
+
+/* Hover effects */
+h1:hover {
+    color: var(--accent);
+    transition: color 0.3s ease;
+}
+/* Button styles */
+.cta-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin: 2rem 0;
+}
+
+.button {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    letter-spacing: 0.025em;
+}
+
+.button-primary {
+    background-color: var(--primary-color);
+    color: white;
+    border: 2px solid var(--primary-color);
+}
+
+.button-primary:hover {
+    background-color: transparent;
+    color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.button-secondary {
+    background-color: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
+.button-secondary:hover {
+    background-color: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive button styles */
+@media (max-width: 768px) {
+    .cta-buttons {
+        flex-direction: column;
+        padding: 0 1rem;
+    }
+
+    .button {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}

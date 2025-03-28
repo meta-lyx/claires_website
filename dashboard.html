@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI平台运营数据看板</title>
+    <!-- 引入 Ant Design 的 CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/antd/4.16.13/antd.min.css" />
+    <!-- 引入Chart.js库 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 
+                        'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+                        'Noto Color Emoji';
+        }
+
+        body {
+            background-color: #f0f2f5;
+            padding: 20px;
+            color: rgba(0, 0, 0, 0.65);
+        }
+
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 2px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left h1 {
+            color: rgba(0, 0, 0, 0.85);
+            font-size: 20px;
+            font-weight: 500;
+            margin-bottom: 0;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 12px;
+        }
+
+        .date-picker, .header-right select {
+            padding: 4px 11px;
+            border-radius: 2px;
+            border: 1px solid #d9d9d9;
+            background-color: #fff;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .date-picker:hover, .header-right select:hover {
+            border-color: #40a9ff;
+        }
+
+        .date-picker:focus, .header-right select:focus {
+            border-color: #40a9ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+            outline: none;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin: 16px 0;
+            color: rgba(0, 0, 0, 0.85);
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 2px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+        }
+
+        .stat-card h3 {
+            color: rgba(0, 0, 0, 0.45);
+            font-size: 14px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-icon {
+            margin-left: 5px;
+            color: rgba(0, 0, 0, 0.45);
+            font-size: 14px;
+            cursor: help;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 500;
+            color: rgba(0, 0, 0, 0.85);
+        }
+
+        .stat-trend {
+            font-size: 13px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .trend-up {
+            color: #52c41a;
+        }
+
+        .trend-down {
+            color: #f5222d;
+        }
+
+        .chart-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .chart {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 2px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            height: 380px; /* 预设固定高度，包含内部padding和图表高度 */
+
+        }
+
+        .chart-canvas {
+            width: 100%;
+            height: 280px; /* 确保这个高度与chart高度匹配 */
+        }
+
+        .chart h3 {
+            color: rgba(0, 0, 0, 0.85);
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .chart-canvas {
+            width: 100%;
+            height: 280px;
+        }
+
+        /* 表格样式 - Ant Design风格 */
+        .agent-usage-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            border-radius: 2px;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .agent-usage-table th, 
+        .agent-usage-table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .agent-usage-table thead th {
+            background-color: #fafafa;
+            font-weight: 500;
+            color: rgba(0, 0, 0, 0.85);
+            font-size: 14px;
+        }
+
+        .agent-usage-table tbody tr:hover {
+            background-color: #fafafa;
+        }
+
+        .usage-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #f5f5f5;
+            border-radius: 100px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .usage-bar-fill {
+            height: 100%;
+            background-color: #1890ff;
+            border-radius: 100px;
+        }
+
+        .table-container {
+            margin-bottom: 24px;
+            overflow-x: auto;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .filter-bar select {
+            padding: 4px 11px;
+            border-radius: 2px;
+            border: 1px solid #d9d9d9;
+            background-color: #fff;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .filter-bar select:hover {
+            border-color: #40a9ff;
+        }
+
+        /* 标记不同状态的标签 */
+        .status-tag {
+            display: inline-block;
+            padding: 0 7px;
+            font-size: 12px;
+            line-height: 20px;
+            border-radius: 2px;
+            box-sizing: border-box;
+            white-space: nowrap;
+        }
+
+        .status-tag-green {
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            color: #52c41a;
+        }
+
+        .status-tag-red {
+            background: #fff1f0;
+            border: 1px solid #ffa39e;
+            color: #f5222d;
+        }
+
+        .status-tag-blue {
+            background: #e6f7ff;
+            border: 1px solid #91d5ff;
+            color: #1890ff;
+        }
+
+        @media (max-width: 992px) {
+            .chart-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <div class="header-left">
+                <h1>AI平台运营数据看板</h1>
+            </div>
+            <div class="header-right">
+                <input type="date" class="date-picker" value="2023-05-01">
+                <span>至</span>
+                <input type="date" class="date-picker" value="2023-05-31">
+                <select>
+                    <option>今日</option>
+                    <option>昨日</option>
+                    <option>最近7天</option>
+                    <option selected>最近30天</option>
+                    <option>本月</option>
+                    <option>上月</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 平台使用数据模块 -->
+        <h2 class="section-title">平台使用数据</h2>
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3>
+                    PV（页面浏览量）
+                    <span class="info-icon" title="指定时间内页面被浏览的总次数">ⓘ</span>
+                </h3>
+                <div class="stat-value">234,567</div>
+                <div class="stat-trend trend-up">↑ 12.5% 对比上期</div>
+            </div>
+            <div class="stat-card">
+                <h3>
+                    UV（独立访客数）
+                    <span class="info-icon" title="指定时间内访问的不同用户数量">ⓘ</span>
+                </h3>
+                <div class="stat-value">45,892</div>
+                <div class="stat-trend trend-up">↑ 8.3% 对比上期</div>
+            </div>
+            <div class="stat-card">
+                <h3>
+                    DAU（日活用户数）
+                    <span class="info-icon" title="每日登录使用平台的用户数">ⓘ</span>
+                </h3>
+                <div class="stat-value">15,287</div>
+                <div class="stat-trend trend-up">↑ 5.2% 对比上期</div>
+            </div>
+            <div class="stat-card">
+                <h3>
+                    MAU（月活用户数）
+                    <span class="info-icon" title="每月至少登录一次的用户数">ⓘ</span>
+                </h3>
+                <div class="stat-value">125,634</div>
+                <div class="stat-trend trend-up">↑ 15.7% 对比上期</div>
+            </div>
+            <!--
+            <div class="stat-card">
+                <h3>
+                    CV（转化次数）
+                    <span class="info-icon" title="完成特定目标行为的总次数">ⓘ</span>
+                </h3>
+                <div class="stat-value">35,412</div>
+                <div class="stat-trend trend-up">↑ 9.2% 对比上期</div>
+            </div>
+            <div class="stat-card">
+                <h3>
+                    转化率
+                    <span class="info-icon" title="CV/PV比率">ⓘ</span>
+                </h3>
+                <div class="stat-value">15.1%</div>
+                <div class="stat-trend trend-down">↓ 2.8% 对比上期</div>
+            </div>
+            --> 
+        </div>
+
+        <div class="chart-container">
+            <div class="chart">
+                <h3>
+                    用户活跃趋势
+                    <select id="activeUserMetric" style="font-size: 12px; font-weight: normal; padding: 4px 11px; border-radius: 2px; border: 1px solid #d9d9d9;">
+                        <option value="dau">DAU</option>
+                        <option value="mau">MAU</option>
+                        <option value="ratio">DAU/MAU比率</option>
+                    </select>
+                </h3>
+                <canvas id="activeUserChart" class="chart-canvas"></canvas>
+            </div>
+            <div class="chart">
+                <h3>
+                    页面流量趋势
+                    <select id="trafficMetric" style="font-size: 12px; font-weight: normal; padding: 4px 11px; border-radius: 2px; border: 1px solid #d9d9d9;">
+                        <option value="pv">PV</option>
+                        <option value="uv">UV</option>
+                        <option value="ratio">PV/UV比率</option>
+                    </select>
+                </h3>
+                <canvas id="trafficChart" class="chart-canvas"></canvas>
+            </div>
+            <div class="chart">
+                <h3>转化率分析</h3>
+                <canvas id="conversionChart" class="chart-canvas"></canvas>
+            </div>
+            <div class="chart">
+                <h3>用户留存率</h3>
+                <canvas id="retentionChart" class="chart-canvas"></canvas>
+            </div>
+        </div>
+
+        <!-- 智能体使用情况模块 -->
+        <h2 class="section-title">智能体使用情况</h2>
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3>总智能体数量</h3>
+                <div class="stat-value">32</div>
+                <div class="stat-trend trend-up">↑ 6 个 本月新增</div>
+            </div>
+            <div class="stat-card">
+                <h3>智能体调用次数</h3>
+                <div class="stat-value">826,492</div>
+                <div class="stat-trend trend-up">↑ 23.5% 对比上期</div>
+            </div>
+            <div class="stat-card">
+                <h3>日均调用次数</h3>
+                <div class="stat-value">27,550</div>
+                <div class="stat-trend trend-up">↑ 18.7% 对比上期</div>
+            </div>
+            <div class="stat-card">
+                <h3>平均响应时间</h3>
+                <div class="stat-value">238ms</div>
+                <div class="stat-trend trend-down">↓ 18.5% 对比上期</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart">
+                <h3>智能体调用趋势</h3>
+                <canvas id="agentUsageChart" class="chart-canvas"></canvas>
+            </div>
+            <div class="chart">
+                <h3>各部门智能体使用分布</h3>
+                <canvas id="departmentUsageChart" class="chart-canvas"></canvas>
+            </div>
+        </div>
+
+        <!-- 部门智能体使用情况表格 -->
+        <div class="filter-bar">
+            <select>
+                <option>全部部门</option>
+                <option>市场部</option>
+                <option>研发部</option>
+                <option>销售部</option>
+                <option>人力资源部</option>
+                <option>财务部</option>
+            </select>
+            <select>
+                <option>全部智能体</option>
+                <option>数据分析助手</option>
+                <option>客户服务机器人</option>
+                <option>内容创作助手</option>
+                <option>研发辅助工具</option>
+            </select>
+            <select>
+                <option>按使用频率排序</option>
+                <option>按部门排序</option>
+                <option>按增长率排序</option>
+            </select>
+        </div>
+
+        <div class="table-container">
+            <table class="agent-usage-table">
+                <thead>
+                    <tr>
+                        <th>部门</th>
+                        <th>用户</th>
+                        <th>智能体</th>
+                        <th>创建者</th>
+                        <th>总会话量</th>
+                        <th>使用频率</th>
+                        <th>环比变化</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>市场部</td>
+                        <td>张明</td>
+                        <td>内容创作助手</td>
+                        <td>小刘</td>
+                        <td>1,284</td>
+                        <td>
+                            <div>每日 42.8 次</div>
+                            <div class="usage-bar">
+                                <div class="usage-bar-fill" style="width: 85%;"></div>
+                            </div>
+                        </td>
+                        <td><span class="status-tag status-tag-green">↑ 23.4%</span></td>
+                    </tr>
+                    <tr>
+                        <td>研发部</td>
+                        <td>李强</td>
+                        <td>代码助手</td>
+                        <td>小刘</td>
+                        <td>965</td>
+                        <td>
+                            <div>每日 32.2 次</div>
+                            <div class="usage-bar">
+                                <div class="usage-bar-fill" style="width: 64%;"></div>
+                            </div>
+                        </td>
+                        <td><span class="status-tag status-tag-green">↑ 15.7%</span></td>
+                    </tr>
+                    <tr>
+                        <td>销售部</td>
+                        <td>王芳</td>
+                        <td>客户服务机器人</td>
+                        <td>小张</td>
+                        <td>842</td>
+                        <td>
+                            <div>每日 28.1 次</div>
+                            <div class="usage-bar">
+                                <div class="usage-bar-fill" style="width: 56%;"></div>
+                            </div>
+                        </td>
+                        <td><span class="status-tag status-tag-green">↑ 8.2%</span></td>
+                    </tr>
+                    <tr>
+                        <td>人力资源部</td>
+                        <td>赵静</td>
+                        <td>招聘助手</td>
+                        <td>小张</td>
+                        <td>756</td>
+                        <td>
+                            <div>每日 25.2 次</div>
+                            <div class="usage-bar">
+                                <div class="usage-bar-fill" style="width: 50%;"></div>
+                            </div>
+                        </td>
+                        <td><span class="status-tag status-tag-red">↓ 3.5%</span></td>
+                    </tr>
+                    <tr>
+                        <td>财务部</td>
+                        <td>陈洁</td>
+                        <td>数据分析助手</td>
+                        <td>小刘</td>
+                        <td>628</td>
+                        <td>
+                            <div>每日 20.9 次</div>
+                            <div class="usage-bar">
+                                <div class="usage-bar-fill" style="width: 42%;"></div>
+                            </div>
+                        </td>
+                        <td><span class="status-tag status-tag-green">↑ 12.3%</span></td>
+                    </tr>
+                    <tr>
+                        <td>研发部</td>
+                        <td>刘伟</td>
+                        <td>内容创作助手</td>
+                        <td>小张</td>
+                        <td>534</td>
+                        <td>
+                            <div>每日 17.8 次</div>
+                            <div class="usage-bar">
+                                <div class="usage-bar-fill" style="width: 35%;"></div>
+                            </div>
+                        </td>
+                        <td><span class="status-tag status-tag-blue">↑ 5.8%</span></td>
+                    </tr>
+                    <tr>
+                        <td>市场部</td>
+                        <td>徐倩</td>
+                        <td>数据分析助手</td>
+                        <td>小张</td>
+                        <td>495</td>
+                        <td>
+                            <div>每日 16.5 次</div>
+                            <div class="usage-bar">
+                                <div class="usage-bar-fill" style="width: 33%;"></div>
+                            </div>
+                        </td>
+                        <td><span class="status-tag status-tag-green">↑ 19.2%</span></td>
+                    </tr>
+                    <tr>
+                        <td>销售部</td>
+                        <td>周勇</td>
+                        <td>客户服务机器人</td>
+                        <td>小张</td>
+                        <td>467</td>
+                        <td>
+                            <div>每日 15.6 次</div>
+                            <div class="usage-bar">
+                                <div class="usage-bar-fill" style="width: 31%;"></div>
+                            </div>
+                        </td>
+                        <td><span class="status-tag status-tag-red">↓ 2.1%</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 图表JS代码 -->
+    <script>
+        // Chart.js配置 - 使用Ant Design的颜色系统
+        Chart.defaults.color = 'rgba(0, 0, 0, 0.65)';
+        Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+
+        // 准备图表数据
+        document.addEventListener('DOMContentLoaded', function() {
+            // 用户活跃趋势图表
+            const activeUserData = {
+                labels: ['5.1', '5.2', '5.3', '5.4', '5.5', '5.6', '5.7', '5.8', '5.9', '5.10', 
+                         '5.11', '5.12', '5.13', '5.14', '5.15', '5.16', '5.17', '5.18', '5.19', '5.20',
+                         '5.21', '5.22', '5.23', '5.24', '5.25', '5.26', '5.27', '5.28', '5.29', '5.30', '5.31'],
+                dau: [14850, 14920, 15100, 14980, 15250, 14750, 14500, 14820, 15030, 15200, 
+                       15350, 15200, 15100, 14920, 15080, 15250, 15400, 15550, 15700, 15650,
+                       15400, 15250, 15300, 15450, 15600, 15750, 15850, 15700, 15600, 15500, 15287],
+                mau: [120800, 121200, 121500, 121800, 122100, 122400, 122700, 123000, 123300, 123600, 
+                       123900, 124100, 124300, 124500, 124700, 124900, 125100, 125300, 125500, 125600,
+                       125700, 125750, 125800, 125850, 125900, 126000, 126100, 126200, 126300, 126400, 125634],
+                ratio: [12.3, 12.3, 12.4, 12.3, 12.5, 12.1, 11.8, 12.0, 12.2, 12.3, 
+                        12.4, 12.2, 12.1, 12.0, 12.1, 12.2, 12.3, 12.4, 12.5, 12.5, 
+                        12.3, 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.4, 12.4, 12.3, 12.2]
+            };
+
+            const activeUserCtx = document.getElementById('activeUserChart').getContext('2d');
+            const activeUserChart = new Chart(activeUserCtx, {
+                type: 'line',
+                data: {
+                    labels: activeUserData.labels,
+                    datasets: [{
+                        label: 'DAU',
+                        data: activeUserData.dau,
+                        backgroundColor: 'rgba(24, 144, 255, 0.1)',
+                        borderColor: '#1890ff',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#1890ff',
+                        pointRadius: 3,
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                            titleFont: {
+                                size: 12
+                            },
+                            bodyFont: {
+                                size: 12
+                            },
+                            padding: 8,
+                            cornerRadius: 2
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 页面流量趋势图表
+            const trafficData = {
+                labels: ['5.1', '5.2', '5.3', '5.4', '5.5', '5.6', '5.7', '5.8', '5.9', '5.10', 
+                         '5.11', '5.12', '5.13', '5.14', '5.15', '5.16', '5.17', '5.18', '5.19', '5.20',
+                         '5.21', '5.22', '5.23', '5.24', '5.25', '5.26', '5.27', '5.28', '5.29', '5.30', '5.31'],
+                pv: [220000, 218000, 225000, 228000, 230000, 218000, 210000, 225000, 232000, 235000, 
+                     240000, 238000, 235000, 228000, 232000, 240000, 245000, 250000, 252000, 250000,
+                     245000, 240000, 242000, 247000, 252000, 255000, 258000, 252000, 248000, 245000, 234567],
+                uv: [42000, 42500, 43000, 43200, 43500, 42800, 42000, 43000, 43800, 44200, 
+                     44800, 44500, 44000, 43500, 44000, 44500, 45000, 45500, 46000, 45800, 
+                     45200, 44800, 45000, 45500, 46000, 46500, 47000, 46500, 46000, 45500, 45892],
+                ratio: [5.2, 5.1, 5.2, 5.3, 5.3, 5.1, 5.0, 5.2, 5.3, 5.3, 
+                        5.4, 5.3, 5.3, 5.2, 5.3, 5.4, 5.4, 5.5, 5.5, 5.5, 
+                        5.4, 5.4, 5.4, 5.4, 5.5, 5.5, 5.5, 5.4, 5.4, 5.4, 5.1]
+            };
+
+            const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+            const trafficChart = new Chart(trafficCtx, {
+                type: 'line',
+                data: {
+                    labels: trafficData.labels,
+                    datasets: [{
+                        label: 'PV',
+                        data: trafficData.pv,
+                        backgroundColor: 'rgba(47, 194, 91, 0.1)',
+                        borderColor: '#52c41a',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#52c41a',
+                        pointRadius: 3,
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                            titleFont: {
+                                size: 12
+                            },
+                            bodyFont: {
+                                size: 12
+                            },
+                            padding: 8,
+                            cornerRadius: 2
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 转化率分析图表
+            const conversionCtx = document.getElementById('conversionChart').getContext('2d');
+            const conversionData = {
+                labels: ['登录', '浏览功能', '尝试使用', '完成任务', '分享结果', '付费升级'],
+                values: [100, 82, 65, 42, 28, 15],
+                dropoff: [18, 17, 23, 14, 13]
+            };
+
+            const conversionChart = new Chart(conversionCtx, {
+                type: 'bar',
+                data: {
+                    labels: conversionData.labels,
+                    datasets: [{
+                        label: '用户百分比',
+                        data: conversionData.values,
+                        backgroundColor: [
+                            '#1890ff',
+                            '#13c2c2',
+                            '#52c41a',
+                            '#faad14',
+                            '#fa8c16',
+                            '#f5222d'
+                        ],
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                            callbacks: {
+                                label: function(context) {
+                                    let index = context.dataIndex;
+                                    let value = context.parsed.y;
+                                    let dropoffText = '';
+                                    
+                                    if (index < conversionData.dropoff.length) {
+                                        dropoffText = `流失率: ${conversionData.dropoff[index]}%`;
+                                    }
+                                    
+                                    return [`转化率: ${value}%`, dropoffText].filter(Boolean);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 用户留存率图表
+            const retentionCtx = document.getElementById('retentionChart').getContext('2d');
+            
+            // 创建热力图数据
+            const retentionData = {
+                labels: ['第1天', '第2天', '第3天', '第7天', '第14天', '第30天'],
+                datasets: [
+                    {
+                        label: '4月第1周',
+                        data: [100, 78, 65, 52, 38, 32],
+                        backgroundColor: function(context) {
+                            const value = context.dataset.data[context.dataIndex];
+                            const alpha = value / 100;
+                            return `rgba(24, 144, 255, ${alpha})`;
+                        }
+                    },
+                    {
+                        label: '4月第2周',
+                        data: [100, 82, 68, 55, 42, 34],
+                        backgroundColor: function(context) {
+                            const value = context.dataset.data[context.dataIndex];
+                            const alpha = value / 100;
+                            return `rgba(24, 144, 255, ${alpha})`;
+                        }
+                    },
+                    {
+                        label: '4月第3周',
+                        data: [100, 85, 71, 58, 45, 36],
+                        backgroundColor: function(context) {
+                            const value = context.dataset.data[context.dataIndex];
+                            const alpha = value / 100;
+                            return `rgba(24, 144, 255, ${alpha})`;
+                        }
+                    },
+                    {
+                        label: '4月第4周',
+                        data: [100, 83, 70, 57, 43, 35],
+                        backgroundColor: function(context) {
+                            const value = context.dataset.data[context.dataIndex];
+                            const alpha = value / 100;
+                            return `rgba(24, 144, 255, ${alpha})`;
+                        }
+                    },
+                    {
+                        label: '5月第1周',
+                        data: [100, 84, 72, 60, 48, 39],
+                        backgroundColor: function(context) {
+                            const value = context.dataset.data[context.dataIndex];
+                            const alpha = value / 100;
+                            return `rgba(24, 144, 255, ${alpha})`;
+                        }
+                    }
+                ]
+            };
+
+            const retentionChart = new Chart(retentionCtx, {
+                type: 'bar',
+                data: retentionData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let value = context.raw;
+                                    return `留存率: ${value}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 智能体调用趋势图表
+            const agentUsageCtx = document.getElementById('agentUsageChart').getContext('2d');
+            const agentUsageData = {
+                labels: ['5.1', '5.2', '5.3', '5.4', '5.5', '5.6', '5.7', '5.8', '5.9', '5.10', 
+                         '5.11', '5.12', '5.13', '5.14', '5.15', '5.16', '5.17', '5.18', '5.19', '5.20',
+                         '5.21', '5.22', '5.23', '5.24', '5.25', '5.26', '5.27', '5.28', '5.29', '5.30', '5.31'],
+                data: [25000, 25200, 25500, 25800, 26000, 25400, 24800, 25500, 26200, 26500, 
+                       27000, 26800, 26500, 26200, 26500, 27000, 27500, 28000, 28200, 28000,
+                       27500, 27000, 27200, 27500, 28000, 28500, 29000, 28500, 28000, 27500, 27550]
+            };
+
+            const agentUsageChart = new Chart(agentUsageCtx, {
+                type: 'line',
+                data: {
+                    labels: agentUsageData.labels,
+                    datasets: [{
+                        label: '智能体调用次数',
+                        data: agentUsageData.data,
+                        backgroundColor: 'rgba(250, 173, 20, 0.1)',
+                        borderColor: '#faad14',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#faad14',
+                        pointRadius: 3,
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.65)'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 各部门智能体使用分布图表
+            const departmentUsageCtx = document.getElementById('departmentUsageChart').getContext('2d');
+            const departmentUsageData = {
+                labels: ['市场部', '研发部', '销售部', '人力资源部', '财务部', '其他'],
+                data: [28, 32, 18, 12, 8, 2]
+            };
+            
+            const departmentUsageChart = new Chart(departmentUsageCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: departmentUsageData.labels,
+                    datasets: [{
+                        data: departmentUsageData.data,
+                        backgroundColor: [
+                            '#1890ff',
+                            '#13c2c2',
+                            '#52c41a',
+                            '#faad14',
+                            '#fa8c16',
+                            '#f5222d'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                            callbacks: {
+                                label: function(context) {
+                                    let value = context.raw;
+                                    let label = context.label || '';
+                                    return `${label}: ${value}%`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+// Add this code in your existing script section, after the departmentUsageChart initialization
+
+// 添加部门详细数据
+const departmentDetailData = {
+    '市场部': {
+        labels: ['张明', '徐倩', '王晓', '李梅', '赵昊'],
+        data: [42, 25, 15, 10, 8],
+        backgroundColor: Array(5).fill('#1890ff')
+    },
+    '研发部': {
+        labels: ['李强', '刘伟', '张浩', '陈明', '周涛'],
+        data: [45, 22, 18, 10, 5],
+        backgroundColor: Array(5).fill('#13c2c2')
+    },
+    '销售部': {
+        labels: ['王芳', '周勇', '林婷', '郑阳', '黄蓉'],
+        data: [38, 28, 15, 12, 7],
+        backgroundColor: Array(5).fill('#52c41a')
+    },
+    '人力资源部': {
+        labels: ['赵静', '刘洋', '孙萍', '钱伟', '周莉'],
+        data: [40, 25, 20, 10, 5],
+        backgroundColor: Array(5).fill('#faad14')
+    },
+    '财务部': {
+        labels: ['陈洁', '张萍', '王璐', '李杰', '孙明'],
+        data: [35, 30, 15, 12, 8],
+        backgroundColor: Array(5).fill('#fa8c16')
+    }
+};
+
+// 添加返回按钮
+const backButton = document.createElement('button');
+backButton.innerText = '返回部门概览';
+backButton.style.display = 'none';
+backButton.style.position = 'absolute';
+backButton.style.top = '10px';
+backButton.style.left = '10px';
+backButton.style.padding = '6px 12px';
+backButton.style.backgroundColor = '#fff';
+backButton.style.border = '1px solid #d9d9d9';
+backButton.style.borderRadius = '2px';
+backButton.style.cursor = 'pointer';
+
+// 获取图表容器并添加返回按钮
+const chartContainer = document.getElementById('departmentUsageChart').parentElement;
+chartContainer.style.position = 'relative';
+chartContainer.insertBefore(backButton, chartContainer.firstChild);
+
+// 点击部门时显示详情
+departmentUsageChart.options.onClick = (event, elements) => {
+    if (elements.length > 0) {
+        const index = elements[0].index;
+        const department = departmentUsageData.labels[index];
+        const detail = departmentDetailData[department];
+
+        if (detail) {
+            // 更新图表为部门详情
+            departmentUsageChart.data.labels = detail.labels;
+            departmentUsageChart.data.datasets[0].data = detail.data;
+            departmentUsageChart.data.datasets[0].backgroundColor = detail.backgroundColor;
+            
+            // 更新图表标题
+            chartContainer.querySelector('h3').textContent = `${department}智能体使用分布`;
+            
+            // 显示返回按钮
+            backButton.style.display = 'block';
+            
+            // 更新图表配置
+            departmentUsageChart.options.plugins.legend.position = 'bottom';
+            
+            departmentUsageChart.update();
+        }
+    }
+};
+
+// 返回按钮点击事件
+backButton.addEventListener('click', () => {
+    // 恢复原始数据
+    departmentUsageChart.data.labels = departmentUsageData.labels;
+    departmentUsageChart.data.datasets[0].data = departmentUsageData.data;
+    departmentUsageChart.data.datasets[0].backgroundColor = [
+        '#1890ff',
+        '#13c2c2',
+        '#52c41a',
+        '#faad14',
+        '#fa8c16',
+        '#f5222d'
+    ];
+    
+    // 更新图表标题
+    chartContainer.querySelector('h3').textContent = '各部门智能体使用分布';
+    
+    // 隐藏返回按钮
+    backButton.style.display = 'none';
+    
+    // 恢复图表配置
+    departmentUsageChart.options.plugins.legend.position = 'right';
+    
+    departmentUsageChart.update();
+});
+
+// 添加悬停样式
+backButton.addEventListener('mouseover', () => {
+    backButton.style.borderColor = '#40a9ff';
+    backButton.style.color = '#40a9ff';
+});
+
+backButton.addEventListener('mouseout', () => {
+    backButton.style.borderColor = '#d9d9d9';
+    backButton.style.color = 'rgba(0, 0, 0, 0.65)';
+});
+            // 选择器变更事件绑定
+            document.getElementById('activeUserMetric').addEventListener('change', function(e) {
+                const metric = e.target.value;
+                let data;
+                let label;
+                
+                if (metric === 'dau') {
+                    data = activeUserData.dau;
+                    label = 'DAU';
+                } else if (metric === 'mau') {
+                    data = activeUserData.mau;
+                    label = 'MAU';
+                } else {
+                    data = activeUserData.ratio;
+                    label = 'DAU/MAU比率';
+                }
+                
+                activeUserChart.data.datasets[0].data = data;
+                activeUserChart.data.datasets[0].label = label;
+                activeUserChart.update();
+            });
+
+            document.getElementById('trafficMetric').addEventListener('change', function(e) {
+                const metric = e.target.value;
+                let data;
+                let label;
+                
+                if (metric === 'pv') {
+                    data = trafficData.pv;
+                    label = 'PV';
+                } else if (metric === 'uv') {
+                    data = trafficData.uv;
+                    label = 'UV';
+                } else {
+                    data = trafficData.ratio;
+                    label = 'PV/UV比率';
+                }
+                
+                trafficChart.data.datasets[0].data = data;
+                trafficChart.data.datasets[0].label = label;
+                trafficChart.update();
+            });
+        });
+    </script>
+</body>
+</html>
+
+
